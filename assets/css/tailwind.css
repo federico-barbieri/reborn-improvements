@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+    html {
+      font-family: "Raleway";
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Raleway:wght@400;700&display=swap');
+
+
+:root{
+  --blue: "#65A9DB";
+  --cream: "#F8F6F6";
+  --gray: "#D9DCDF";
+  --dark: "#35354A";
+  --green: "#7DCC7F"
+  font-family: 'Merriweather', serif;
+  font-family: 'Raleway', sans-serif;
+}
+
+  }
