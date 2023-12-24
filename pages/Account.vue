@@ -106,6 +106,7 @@ let { data: fetchedDaycares, error } = await supabase
   
   daycares.value = fetchedDaycares
 
+
 } else{
 
   let { data: fetchedDaycares, error } = await supabase
@@ -558,6 +559,8 @@ onMounted(() => {
 
   window.addEventListener('resize', handleResize);
 
+  getDaycaresForDistance()
+
 })
 
 // tabs from nuxt ui
@@ -603,20 +606,123 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
   calculatedDistance.value = distance.toFixed(2);
 
-  console.log(calculatedDistance.value);
+  console.log("user latitude", userLatitude);
+  console.log("user longitude", userLongitude);
+  console.log("daycare latitude", daycareLatitude);
+  console.log("daycare longitude", daycareLongitude);
 
+
+}
+
+// the user latitude and user longitude is set based on what the user inserts as address (lookForStuff does the trick)
+
+// we need to create a select element with all the daycares. 
+
+//the selection makes a call to supabase to get lat and long
+
+
+
+let userLatitude = ref();
+let userLongitude = ref();
+
+let daycareLatitude = ref();
+let daycareLongitude = ref();
+
+let calculatedDistance = ref(0);
+
+let userAddress = ref()
+
+
+// GEOLOCATE A PLACE
+
+const accessToken = 'pk.eyJ1Ijoic2xvZ2FsYW5kIiwiYSI6ImNscGRjdndoMTB2NXUycXByODI3emJ3M20ifQ.T-e8tPTL8Bo3n2KeCQaWOg';
+
+const geocodingEndpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(userAddress)}.json?country=DK&access_token=${accessToken}`;
+
+
+
+
+
+async function lookForStuff(daycareLatitude, daycareLongitude){
+
+
+fetch(geocodingEndpoint)
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(data => {
+    // Extract coordinates from the response
+    const coordinates = data.features[0].geometry.coordinates;
+    const longitude = coordinates[0];
+    const latitude = coordinates[1];
+    console.log(data)
+    
+
+    userLatitude = latitude;
+    userLongitude = longitude;
+
+    getDistance(userLatitude.value, userLongitude.value, daycareLatitude, daycareLongitude)
+  })
+  .catch(error => {
+    console.error('There was a problem fetching the geocoding data:', error);
+  });
+}
+
+
+// WHEN THE USER SELECTS A DAYCARE, WE EXTRACT LAT AND LONG
+
+let listOfDaycareDistanceOptions = ref([])
+
+
+async function getDaycaresForDistance(){
+
+let { data: fetchedNames, error } = await supabase
+  .from('daycares')
+  .select('name')
+
+  for(let i = 0; i<fetchedNames.length; i++){
+    listOfDaycareDistanceOptions.value.push(fetchedNames[i].name)  
+  }
+  
+
+  console.log(listOfDaycareDistanceOptions);
 }
 
 
 
-let latitude1 = ref();
-let longitude1 = ref();
+let selectedDaycareForDistance = ref('');
 
-let latitude2 = ref();
-let longitude2 = ref();
+// filter through daycares based on listening to changes in selectedAreaForFiltering ref
 
-let calculatedDistance = ref(0);
+watch(selectedDaycareForDistance, () => {
 
+console.log(selectedDaycareForDistance.value)
+
+getCoordinatesForDistance(selectedDaycareForDistance.value)
+  
+
+});
+
+async function getCoordinatesForDistance(selectedDaycare){
+
+let { data: fetchedCoordinates, error } = await supabase
+  .from('daycares')
+  .select('longitude, latitude')
+  .filter('name', 'eq', selectedDaycare)
+  .single();
+
+  
+
+  daycareLongitude = fetchedCoordinates.longitude;
+  daycareLatitude = fetchedCoordinates.latitude
+
+  console.log("daycare longitude", daycareLongitude)
+  
+
+}
 
 
 
@@ -1155,34 +1261,31 @@ overflow: hidden;
 
              <template #distance = {item}>
 
-<div style="height: 60vh; width: 80%; border: 1px solid red; margin: 0 auto;">
+<div style="height: 40vh; width: 80%; border: 1px solid red; margin: 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: space-around;">
 
-  <UFormGroup label="Latitude 1" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
-          <UInput placeholder="Latitude 1" v-model="latitude1" />
+  <div style="height: 100%; width: 50%;">
 
-</UFormGroup>
-
-<UFormGroup label="Longitude 1" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
-          <UInput placeholder="Longitude 1" v-model="longitude1" />
+  <UFormGroup label="My address" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
+          <UInput placeholder="My address" v-model="userAddress" />
 
 </UFormGroup>
 
-<UFormGroup label="Latitude 2" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
-          <UInput placeholder="Latitude 2" v-model="latitude2" />
-
-</UFormGroup>
-
-<UFormGroup label="Longitude 2" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
-          <UInput placeholder="Longitude 2" v-model="longitude2" />
-
-</UFormGroup>
   
- <UButton @click="() => getDistance(latitude1, longitude1, latitude2, longitude2)">Calculate distance</UButton> 
-
- <p class="mt-5">Distance is {{ calculatedDistance }}</p>
- 
+  
+ <UButton @click="() => lookForStuff(daycareLatitude, daycareLongitude)">Calculate distance</UButton>  
 
 
+ <p class="mt-5">Distance is {{ calculatedDistance }} km</p>
+
+</div>
+
+ <USelect
+                              style="width: 100%"
+                              placeholder="Select daycare"
+                              :options="listOfDaycareDistanceOptions"
+                              v-model="selectedDaycareForDistance"
+                              icon="i-heroicons-magnifying-glass-20-solid"
+                              />      
   
   
 </div>
