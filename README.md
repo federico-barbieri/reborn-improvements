@@ -1,75 +1,24 @@
-# Nuxt 3 Minimal Starter
+Improvements for this project include:
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+- **A distance tracker**, that measures the distance between daycares and the user's address. **(DONE)**
 
-## Setup
+  How it works
 
-Make sure to install the dependencies:
+The user adds their address, which is geocoded using Mapbox's Geocoding API and turned into coordinates (latitude and longitude).
 
-```bash
-# npm
-npm install
+When the user selects a daycare to measure the distance, we store the daycare name and make a get request to Supabase filtering through the daycares table with that name.
 
-# pnpm
-pnpm install
+When we get the daycare, we extract its latitude and longitude coordinates.
 
-# yarn
-yarn install
+By comparing the user coordinates with the daycares' coordinates using the Haversine formula, we can figure out the distance in km.
 
-# bun
-bun install
-```
 
-## Development Server
 
-Start the development server on `http://localhost:3000`:
+- **Daycare badge**, to separate vuggestue from børnehave **WIP**
 
-```bash
-# npm
-npm run dev
+    How it works
 
-# pnpm
-pnpm run dev
+  By adding a new column called "type" to the daycare's table in Supabase, we can filter through it and manipulate what to display.
 
-# yarn
-yarn dev
 
-# bun
-bun run dev
-```
 
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm run build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
