@@ -14,11 +14,13 @@ By comparing the user coordinates with the daycares' coordinates using the Haver
 
 
 
-- **Daycare badge**, to separate vuggestue from børnehave **WIP**
+- **Daycare badge**, to separate vuggestue from børnehave
 
     How it works
 
-  By adding a new column called "type" to the daycare's table in Supabase, we can filter through it and manipulate what to display.
+  By adding a new column called "type" to the daycare's table in Supabase, we can show a small badge with either "Vuggestue" or "Bornehave".
 
+
+- **Daycare filter**, to filter between vuggestuer and bornehaver. **WIP**
 
 
