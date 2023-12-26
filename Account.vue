@@ -136,6 +136,7 @@ let daycareWebsite = ref('');
 let daycareCost = ref(null);
 let daycareEmail = ref('');
 let daycareNumber = ref(null);
+let daycareTypeOfInstitution = ref()
 
 async function activateModal(selectedDaycare){
 
@@ -163,6 +164,7 @@ async function activateModal(selectedDaycare){
           daycareEmail.value = data[0].email;
           daycareNumber.value = data[0].phone;
           daycarePedagog.value = data[0].pedagog_ratio;
+          daycareTypeOfInstitution.value = data[0].type_of_institution;
 
           daycareModalisOpen.value = true;
         }
@@ -606,19 +608,8 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
   calculatedDistance.value = distance.toFixed(2);
 
-  console.log("user latitude", userLatitude);
-  console.log("user longitude", userLongitude);
-  console.log("daycare latitude", daycareLatitude);
-  console.log("daycare longitude", daycareLongitude);
-
 
 }
-
-// the user latitude and user longitude is set based on what the user inserts as address (lookForStuff does the trick)
-
-// we need to create a select element with all the daycares. 
-
-//the selection makes a call to supabase to get lat and long
 
 
 
@@ -1079,7 +1070,10 @@ overflow: hidden;
 
 
                                                 <template #header>
+                                                  <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
                                                   <h2><strong>{{ daycare.name }}</strong></h2>
+                                                  <UBadge :ui="{variant: {solid: 'bg-blue-500 dark:bg-blue-500 dark:text-white'}}">{{ daycare.type_of_institution }}</UBadge>
+                                                </div>
                                                 </template>
 
                                                 <div>
@@ -1256,31 +1250,32 @@ overflow: hidden;
 
              <template #distance = {item}>
 
-<div style="height: 40vh; width: 80%; border: 1px solid red; margin: 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: space-around;">
-
-  <div style="height: 100%; width: 50%;">
-
-  <UFormGroup label="My address" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
-          <UInput placeholder="My address" v-model="userAddress" />
-
-</UFormGroup>
-
-  
-  
- <UButton @click="() => lookForStuff(daycareLatitude, daycareLongitude)">Calculate distance</UButton>  
+<div style="height: 65vh; width: 100%; border: 1px solid red; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: space-around;">
 
 
- <p class="mt-5">Distance is {{ calculatedDistance }} km</p>
+              <UFormGroup label="My address" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
+                      <UInput placeholder="My address" v-model="userAddress" />
 
-</div>
+              </UFormGroup>
 
- <USelect
-                              style="width: 100%"
-                              placeholder="Select daycare"
-                              :options="listOfDaycareDistanceOptions"
-                              v-model="selectedDaycareForDistance"
-                              icon="i-heroicons-magnifying-glass-20-solid"
-                              />      
+              <USelect
+              class="mb-5"
+              style="width: 100%"
+              placeholder="Select daycare"
+              :options="listOfDaycareDistanceOptions"
+              v-model="selectedDaycareForDistance"
+              icon="i-heroicons-magnifying-glass-20-solid"
+              />  
+
+              
+              
+            <UButton @click="() => lookForStuff(daycareLatitude, daycareLongitude)">Calculate distance</UButton>  
+
+
+            <p class="mt-5">Distance is {{ calculatedDistance }} km</p>
+
+
+                                 
   
   
 </div>
