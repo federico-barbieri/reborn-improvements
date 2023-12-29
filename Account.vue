@@ -711,6 +711,12 @@ async function getCoordinatesForDistance(selectedDaycare) {
 }
 
 
+const getRandomImagePath = () => {
+      const randomNumber = Math.floor(Math.random() * 13 + 1);
+      return `/daycares/${randomNumber}.jpg`;
+    };
+
+
 
 
 </script>
@@ -1076,11 +1082,34 @@ overflow: hidden;
                                                 </div>
                                                 </template>
 
-                                                <div>
-                                                  <p><em>{{ daycare.address }}</em></p>
-                                                  <span>{{ daycare.area }}</span> <br><br>
-                                                  <p><em>Pedagog to child ratio: {{ daycare.pedagog_ratio }}:1</em></p>
+                                                <div 
+                                                :style="{
+                                                  width: '100%', 
+                                                  height: '100%', 
+                                                  display: 'flex',
+                                                  'flex-direction': windowWidth < 1000 ? 'column' : 'row',
+                                                  'align-items': 'center',
+                                                  'justify-content': 'space-between',
+                                                }">
+                                                        <div 
+                                                        :style="{
+                                                        width: windowWidth < 1000 ? '100%' : '40%',
+                                                        }">
+                                                              <img style="max-width: 100%; height: auto; border-radius: 30px;" :src="getRandomImagePath()" alt="">
+                                                        </div>
+
+                                                        <div 
+                                                        :style="{
+                                                        width: windowWidth < 1000 ? '100%' : '50%',
+                                                        'margin-top': windowWidth < 1000 ? '2rem' : ''
+                                                        }">
+                                                        <p><em>{{ daycare.address }}</em></p>
+                                                        <span>{{ daycare.area }}</span> <br><br>
+                                                        <p><em>Pedagog to child ratio: {{ daycare.pedagog_ratio }}:1</em></p>
+                                                      </div>
                                                 </div>
+
+                                               
 
 
                                                 <template #footer>
