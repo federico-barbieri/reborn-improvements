@@ -121,6 +121,10 @@ let { data: fetchedDaycares, error } = await supabase
 
 }
 
+// daycare image
+
+let daycareImage = ref()
+
 
 // daycare modal
 
@@ -136,6 +140,7 @@ let daycareWebsite = ref('');
 let daycareCost = ref(null);
 let daycareEmail = ref('');
 let daycareNumber = ref(null);
+let daycareTypeOfInstitution = ref()
 
 async function activateModal(selectedDaycare){
 
@@ -163,6 +168,7 @@ async function activateModal(selectedDaycare){
           daycareEmail.value = data[0].email;
           daycareNumber.value = data[0].phone;
           daycarePedagog.value = data[0].pedagog_ratio;
+          daycareTypeOfInstitution.value = data[0].type_of_institution;
 
           daycareModalisOpen.value = true;
         }
@@ -586,9 +592,10 @@ function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
 
+
+
 function getDistance(lat1, lon1, lat2, lon2) {
 
-  console.log("init");
   const R = 6371; // Earth's radius in kilometers
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
@@ -606,19 +613,8 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
   calculatedDistance.value = distance.toFixed(2);
 
-  console.log("user latitude", userLatitude);
-  console.log("user longitude", userLongitude);
-  console.log("daycare latitude", daycareLatitude);
-  console.log("daycare longitude", daycareLongitude);
-
 
 }
-
-// the user latitude and user longitude is set based on what the user inserts as address (lookForStuff does the trick)
-
-// we need to create a select element with all the daycares. 
-
-//the selection makes a call to supabase to get lat and long
 
 
 
@@ -637,38 +633,34 @@ let userAddress = ref()
 
 const accessToken = 'pk.eyJ1Ijoic2xvZ2FsYW5kIiwiYSI6ImNscGRjdndoMTB2NXUycXByODI3emJ3M20ifQ.T-e8tPTL8Bo3n2KeCQaWOg';
 
-const geocodingEndpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(userAddress)}.json?country=DK&access_token=${accessToken}`;
 
 
+async function lookForStuff() {
+  const geocodingEndpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(userAddress.value)}.json?access_token=${accessToken}`;
 
-
-
-async function lookForStuff(daycareLatitude, daycareLongitude){
-
-
-fetch(geocodingEndpoint)
-  .then(response => {
+  try {
+    const response = await fetch(geocodingEndpoint);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
-    return response.json();
-  })
-  .then(data => {
-    // Extract coordinates from the response
+    
+    const data = await response.json();
     const coordinates = data.features[0].geometry.coordinates;
     const longitude = coordinates[0];
     const latitude = coordinates[1];
-    console.log(data)
-    
 
     userLatitude = latitude;
     userLongitude = longitude;
 
-    getDistance(userLatitude.value, userLongitude.value, daycareLatitude, daycareLongitude)
-  })
-  .catch(error => {
+    // Update the distance calculation here
+    const selectedDaycare = selectedDaycareForDistance.value;
+    if (selectedDaycare) {
+      await getCoordinatesForDistance(selectedDaycare);
+      getDistance(daycareLatitude, daycareLongitude, userLatitude, userLongitude);
+    }
+  } catch (error) {
     console.error('There was a problem fetching the geocoding data:', error);
-  });
+  }
 }
 
 
@@ -688,7 +680,6 @@ let { data: fetchedNames, error } = await supabase
   }
   
 
-  console.log(listOfDaycareDistanceOptions);
 }
 
 
@@ -699,30 +690,35 @@ let selectedDaycareForDistance = ref('');
 
 watch(selectedDaycareForDistance, () => {
 
-console.log(selectedDaycareForDistance.value)
-
+  calculatedDistance.value = 0;
 getCoordinatesForDistance(selectedDaycareForDistance.value)
   
 
 });
 
-async function getCoordinatesForDistance(selectedDaycare){
+async function getCoordinatesForDistance(selectedDaycare) {
+  try {
+    const { data: fetchedCoordinates, error } = await supabase
+      .from('daycares')
+      .select('longitude, latitude')
+      .filter('name', 'eq', selectedDaycare)
+      .single();
 
-let { data: fetchedCoordinates, error } = await supabase
-  .from('daycares')
-  .select('longitude, latitude')
-  .filter('name', 'eq', selectedDaycare)
-  .single();
+    if (error) {
+      throw new Error(error.message);
+    }
 
-  
-
-  daycareLongitude = fetchedCoordinates.longitude;
-  daycareLatitude = fetchedCoordinates.latitude
-
-  console.log("daycare longitude", daycareLongitude)
-  
-
+    daycareLongitude = fetchedCoordinates.longitude;
+    daycareLatitude = fetchedCoordinates.latitude;
+  } catch (error) {
+    console.error('Error fetching daycare coordinates:', error);
+  }
 }
+
+
+function getRandomImagePath(img){
+      return `/daycares/${img}.jpg`;
+    };
 
 
 
@@ -1084,14 +1080,40 @@ overflow: hidden;
 
 
                                                 <template #header>
+                                                  <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
                                                   <h2><strong>{{ daycare.name }}</strong></h2>
+                                                  <UBadge :ui="{variant: {solid: 'bg-blue-500 dark:bg-blue-500 dark:text-white'}}">{{ daycare.type_of_institution }}</UBadge>
+                                                </div>
                                                 </template>
 
-                                                <div>
-                                                  <p><em>{{ daycare.address }}</em></p>
-                                                  <span>{{ daycare.area }}</span> <br><br>
-                                                  <p><em>Pedagog to child ratio: {{ daycare.pedagog_ratio }}:1</em></p>
+                                                <div 
+                                                :style="{
+                                                  width: '100%', 
+                                                  height: '100%', 
+                                                  display: 'flex',
+                                                  'flex-direction': windowWidth < 1000 ? 'column' : 'row',
+                                                  'align-items': 'center',
+                                                  'justify-content': 'space-between',
+                                                }">
+                                                        <div 
+                                                        :style="{
+                                                        width: windowWidth < 1000 ? '100%' : '40%',
+                                                        }">
+                                                              <img style="max-width: 100%; height: auto; border-top-right-radius: 30px; border-bottom-left-radius: 30px;" :src="getRandomImagePath(daycare.image)" alt="">
+                                                        </div>
+
+                                                        <div 
+                                                        :style="{
+                                                        width: windowWidth < 1000 ? '100%' : '50%',
+                                                        'margin-top': windowWidth < 1000 ? '2rem' : ''
+                                                        }">
+                                                        <p><em>{{ daycare.address }}</em></p>
+                                                        <span>{{ daycare.area }}</span> <br><br>
+                                                        <p><em>Pedagog to child ratio: {{ daycare.pedagog_ratio }}:1</em></p>
+                                                      </div>
                                                 </div>
+
+                                               
 
 
                                                 <template #footer>
@@ -1261,31 +1283,47 @@ overflow: hidden;
 
              <template #distance = {item}>
 
-<div style="height: 40vh; width: 80%; border: 1px solid red; margin: 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: space-around;">
+    <div 
+    :style="{
+    border: '1px solid red',
+    height: '65vh', 
+    width: '100%', 
+    margin: '0 auto', 
+    display: 'flex', 
+    'flex-direction': windowWidth < 1000 ? 'column' : 'row', 
+    'align-items': 'center', 
+    'justify-content': 'space-around',
+    }">
 
-  <div style="height: 100%; width: 50%;">
-
-  <UFormGroup label="My address" class="mb-5" :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
-          <UInput placeholder="My address" v-model="userAddress" />
-
-</UFormGroup>
-
-  
-  
- <UButton @click="() => lookForStuff(daycareLatitude, daycareLongitude)">Calculate distance</UButton>  
+              
 
 
- <p class="mt-5">Distance is {{ calculatedDistance }} km</p>
+              <UFormGroup label="My address"  :ui="{label: {base: 'block font-medium text-white dark:text-white'}}">
+                      <UInput placeholder="Vesterbrogade 150, 1705, Copenhagen" v-model="userAddress"  />
 
-</div>
+              </UFormGroup>
 
- <USelect
-                              style="width: 100%"
-                              placeholder="Select daycare"
-                              :options="listOfDaycareDistanceOptions"
-                              v-model="selectedDaycareForDistance"
-                              icon="i-heroicons-magnifying-glass-20-solid"
-                              />      
+              <USelect
+              
+              class="mb-5"
+              style="width: 100%"
+              placeholder="Select daycare"
+              :options="listOfDaycareDistanceOptions"
+              v-model="selectedDaycareForDistance"
+              icon="i-heroicons-magnifying-glass-20-solid"
+              />  
+
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-around; height: 20%;">
+              
+            <UButton @click="() => lookForStuff(daycareLatitude, daycareLongitude)">Calculate distance</UButton>  
+
+
+            <p class="mt-5">Distance is {{ calculatedDistance }} km</p>
+
+          </div>
+
+
+                                 
   
   
 </div>
